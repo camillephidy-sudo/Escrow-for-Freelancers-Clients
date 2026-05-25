@@ -1,6 +1,6 @@
 # Lockstep
 
-**Milestone escrow for freelancers & clients** — Alchemy University EVM Capstone.
+**Milestone escrow for freelancers & clients**
 
 Lock ETH on Sepolia; release payment to a freelancer only when the client approves each milestone. Full-stack demo: Foundry smart contract + React/wagmi frontend.
 
