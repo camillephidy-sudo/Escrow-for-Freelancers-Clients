@@ -1,125 +1,108 @@
-# Merkle Tree Gift List
+# Lockstep
 
-A demonstration of using Merkle Trees for efficient membership verification in a blockchain-inspired context. This project implements a "gift list" where the server only stores a single 32-byte Merkle root, yet can verify if a client is on the list without storing the entire list.
+**Milestone escrow for freelancers & clients** — Alchemy University EVM Capstone.
 
-## Table of Contents
+Lock ETH on Sepolia; release payment to a freelancer only when the client approves each milestone. Full-stack demo: Foundry smart contract + React/wagmi frontend.
 
-- [Overview](#overview)
-- [How It Works](#how-it-works)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Project Structure](#project-structure)
-- [API](#api)
-- [Adding Your Name](#adding-your-name)
-- [Contributing](#contributing)
+## Problem & solution
 
-## Overview
+| | |
+|---|---|
+| **Problem** | Clients and freelancers struggle with trust: pay upfront vs. deliver first. |
+| **Solution** | On-chain escrow locks funds; the client calls `approveMilestone` to release proportional ETH per milestone. |
 
-This project addresses a key blockchain storage problem: nodes must store all data, but storage is expensive. By using Merkle Trees, we can prove membership in a large dataset with minimal data storage.
+## Architecture
 
-- **Client (Prover)**: Generates a Merkle proof for their name and sends it to the server.
-- **Server (Verifier)**: Verifies the proof against the stored Merkle root.
+```
+React (wagmi)  →  Escrow.sol  →  Sepolia testnet
+```
 
-## How It Works
+## Project structure
 
-Merkle Trees allow efficient verification of data integrity and membership. Here's the flow:
+```
+├── contracts/          # Foundry: Escrow.sol, tests, deploy script
+├── frontend/           # Vite + React + wagmi UI
+└── README.md
+```
 
-1. A Merkle Tree is built from the list of names.
-2. The root hash is stored on the server.
-3. To prove a name is on the list, the client provides:
-   - The name
-   - A proof (list of hashes from the leaf to the root)
-4. The server verifies the proof by reconstructing the path to the root.
+## Prerequisites
 
-This ensures the server only needs 32 bytes (the root) to verify any name from a potentially massive list.
+- [Node.js](https://nodejs.org/) 18+
+- [Foundry](https://book.getfoundry.sh/getting-started/installation) (`forge`, `cast`)
+- MetaMask (or similar) on **Sepolia**
+- [Alchemy](https://www.alchemy.com/) API key
+- [WalletConnect Cloud](https://cloud.walletconnect.com/) project ID (for WalletConnect)
 
-## Installation
+## Smart contracts
 
-1. Install dependencies:
-   ```bash
-   npm install
-   ```
+### Install Foundry (if needed)
 
-## Usage
-
-### Running the Example
-
-1. Start the server:
-   ```bash
-   node server/index.js
-   ```
-
-2. In another terminal, run the client:
-   ```bash
-   node client/index.js
-   ```
-
-The client will send a proof for "GitHub Copilot" and receive a gift if verified.
-
-### Testing the Merkle Tree
-
-Run the example script:
 ```bash
-node utils/example.js
+curl -L https://foundry.paradigm.xyz | bash
+foundryup
 ```
 
-This verifies that "Norman Block" is in the tree.
+On Windows, use [Foundry releases](https://github.com/foundry-rs/foundry/releases) or WSL.
 
-## Project Structure
+### Run tests
 
-```
-.
-├── client/
-│   └── index.js          # Client script that generates and sends proofs
-├── server/
-│   └── index.js          # Express server that verifies proofs
-├── utils/
-│   ├── MerkleTree.js     # Merkle Tree implementation
-│   ├── verifyProof.js    # Proof verification function
-│   ├── niceList.json     # List of names on the gift list
-│   └── example.js        # Example usage
-├── package.json          # Dependencies
-└── README.md             # This file
+```bash
+cd contracts
+forge test -vv
 ```
 
-## API
+### Deploy to Sepolia
 
-### POST /gift
+1. Copy `contracts/.env.example` → `contracts/.env`
+2. Add `PRIVATE_KEY`, `SEPOLIA_RPC_URL`, `ETHERSCAN_API_KEY`
+3. Fund deployer with Sepolia ETH ([faucet](https://sepoliafaucet.com/))
 
-Verifies if a name is on the gift list.
-
-**Request Body:**
-```json
-{
-  "name": "string",
-  "proof": [
-    {
-      "data": "hex_string",
-      "left": boolean
-    }
-  ]
-}
+```bash
+cd contracts
+forge script script/Deploy.s.sol:DeployScript --rpc-url sepolia --broadcast --verify -vvvv
 ```
 
-**Response:**
-- Success: `"You got a toy robot!"`
-- Failure: `"You are not on the list :("`
+4. Copy deployed address into `frontend/.env` as `VITE_ESCROW_ADDRESS`
 
-## Adding Your Name
+## Frontend
 
-To add your name to the gift list:
+```bash
+cd frontend
+cp .env.example .env
+# Edit: VITE_ALCHEMY_API_KEY, VITE_ESCROW_ADDRESS, VITE_WALLETCONNECT_PROJECT_ID
+npm install
+npm run dev
+```
 
-1. Edit `utils/niceList.json` and add your name to the array.
+Open http://localhost:5173, connect wallet on Sepolia, create an escrow.
 
-2. Recompute the Merkle root:
-   ```bash
-   node -e "const MerkleTree = require('./utils/MerkleTree'); const niceList = require('./utils/niceList.json'); const tree = new MerkleTree(niceList); console.log(tree.getRoot());"
-   ```
+### Demo flow (certification video)
 
-3. Update the `MERKLE_ROOT` in `server/index.js` with the new hash.
+1. **Elevator pitch** — “Lockstep: milestone escrow on Sepolia”
+2. **Problem** — trust in freelance payments
+3. **Solution** — locked ETH + milestone releases
+4. **Demo** — connect → create & fund → approve milestone → Etherscan
+5. **Tech** — Foundry tests, Solidity, wagmi
 
-4. Modify `client/index.js` to use your name.
+## Deployed contract
 
-## Contributing
+| Network | Address |
+|---------|---------|
+| Sepolia | _Set after deploy — update this table and `frontend/.env`_ |
 
-Feel free to improve the implementation, add tests, or enhance the documentation. This is an educational project for learning about Merkle Trees in blockchain contexts.
+## Certification submission
+
+- [ ] Record ≤5 min video (pitch, problem, solution, live demo)
+- [ ] Submit form on [AU EVM certification](https://university.alchemy.com/certifications/evm-chain) → Project Submission tab
+- [ ] Optional: deploy frontend to Vercel and link in submission
+
+See [SUBMISSION.md](./SUBMISSION.md) for video script and checklist.
+
+## Resources
+
+- [AU EVM resources](https://university.alchemy.com/certifications/evm-chain?tab=resources)
+- [Alchemy Builders Discord](https://discord.com/invite/alchemy-builders)
+
+## License
+
+MIT
